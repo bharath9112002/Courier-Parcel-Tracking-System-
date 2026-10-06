@@ -122,7 +122,26 @@ const PATHS = {
       <path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" />
     </>
   ),
-  trendUp: <path d="m3 17 6-6 4 4 8-8M15 7h6v6" />,
+  edit: (
+    <>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+      <path d="M10 11v6M14 11v6" />
+    </>
+  ),
+  copy: (
+    <>
+      <rect x="9" y="9" width="12" height="12" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </>
+  ),
+  arrowLeft: <path d="M19 12H5m6-6-6 6 6 6" />,
+  trendUp:<path d="m3 17 6-6 4 4 8-8M15 7h6v6" />,
   trendDown: <path d="m3 7 6 6 4-4 8 8M15 17h6v-6" />,
 }
 

@@ -1,4 +1,10 @@
+import { PARCEL_TYPES, SHIPMENT_TYPES, todayISO } from './shipmentOptions'
+import { STATUS } from './shipmentStatus'
+import { TRACKING_PATTERN } from './tracking'
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+const PERSON_NAME_RE = /^[a-zA-Z][a-zA-Z\s.'-]*$/
+const MAX_WEIGHT_KG = 500
 const PHONE_RE = /^[6-9]\d{9}$/
 
 export function validateEmail(email) {
@@ -47,6 +53,63 @@ export function validateForgotPassword({ email }) {
   const errors = {}
   const emailError = validateEmail(email)
   if (emailError) errors.email = emailError
+  return errors
+}
+
+function validatePersonName(value, who) {
+  const name = value.trim()
+  if (!name) return `${who} name is required`
+  if (name.length < 3) return `${who} name must be at least 3 characters`
+  if (!PERSON_NAME_RE.test(name)) return `${who} name can contain only letters, spaces, . ' -`
+  return ''
+}
+
+function validateAddress(value, which) {
+  const address = value.trim()
+  if (!address) return `${which} address is required`
+  if (address.length < 10) return `Enter the full ${which.toLowerCase()} address (at least 10 characters)`
+  return ''
+}
+
+// `mode` is 'create' or 'edit'. Past shipping dates are only allowed when editing.
+export function validateShipment(values, mode = 'create') {
+  const errors = {}
+
+  if (!TRACKING_PATTERN.test(values.trackingNumber)) errors.trackingNumber = 'Invalid tracking number'
+
+  const senderError = validatePersonName(values.senderName, 'Sender')
+  if (senderError) errors.senderName = senderError
+  const receiverError = validatePersonName(values.receiverName, 'Receiver')
+  if (receiverError) errors.receiverName = receiverError
+
+  const pickupError = validateAddress(values.pickupAddress, 'Pickup')
+  if (pickupError) errors.pickupAddress = pickupError
+  const deliveryError = validateAddress(values.deliveryAddress, 'Delivery')
+  if (deliveryError) errors.deliveryAddress = deliveryError
+  else if (values.deliveryAddress.trim().toLowerCase() === values.pickupAddress.trim().toLowerCase()) {
+    errors.deliveryAddress = 'Delivery address must be different from the pickup address'
+  }
+
+  const weight = String(values.weight).trim()
+  if (!weight) errors.weight = 'Parcel weight is required'
+  else if (!/^\d+(\.\d{1,2})?$/.test(weight)) errors.weight = 'Enter a number with up to 2 decimals'
+  else if (Number(weight) <= 0) errors.weight = 'Weight must be greater than 0'
+  else if (Number(weight) > MAX_WEIGHT_KG) errors.weight = `Maximum weight is ${MAX_WEIGHT_KG} kg`
+
+  if (!PARCEL_TYPES[values.parcelType]) errors.parcelType = 'Select a parcel type'
+  if (!SHIPMENT_TYPES[values.shipmentType]) errors.shipmentType = 'Select a shipment type'
+  if (!STATUS[values.status]) errors.status = 'Select a delivery status'
+
+  if (!values.shippingDate) errors.shippingDate = 'Shipping date is required'
+  else if (mode === 'create' && values.shippingDate < todayISO()) {
+    errors.shippingDate = 'Shipping date cannot be in the past'
+  }
+
+  if (!values.expectedDeliveryDate) errors.expectedDeliveryDate = 'Expected delivery date is required'
+  else if (values.shippingDate && values.expectedDeliveryDate < values.shippingDate) {
+    errors.expectedDeliveryDate = 'Expected delivery cannot be before the shipping date'
+  }
+
   return errors
 }
 

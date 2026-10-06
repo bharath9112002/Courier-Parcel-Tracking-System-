@@ -9,6 +9,10 @@ import Login from './pages/Login'
 import NotFound from './pages/NotFound'
 import Profile from './pages/Profile'
 import Register from './pages/Register'
+import ShipmentCreate from './pages/shipments/ShipmentCreate'
+import ShipmentDetails from './pages/shipments/ShipmentDetails'
+import ShipmentEdit from './pages/shipments/ShipmentEdit'
+import ShipmentList from './pages/shipments/ShipmentList'
 
 export default function App() {
   return (
@@ -25,8 +29,10 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/shipments" element={<ComingSoon title="Shipments" icon="package" />} />
-          <Route path="/shipments/new" element={<ComingSoon title="Create shipment" icon="plus" />} />
+          <Route path="/shipments" element={<ShipmentList />} />
+          <Route path="/shipments/new" element={<ShipmentCreate />} />
+          <Route path="/shipments/:id" element={<ShipmentDetails />} />
+          <Route path="/shipments/:id/edit" element={<ShipmentEdit />} />
           <Route path="/tracking" element={<ComingSoon title="Track parcel" icon="pin" />} />
           <Route path="/customers" element={<ComingSoon title="Customers" icon="users" />} />
           <Route path="/customers/new" element={<ComingSoon title="Add customer" icon="users" />} />
