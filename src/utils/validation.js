@@ -6,6 +6,8 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 const PERSON_NAME_RE = /^[a-zA-Z][a-zA-Z\s.'-]*$/
 const MAX_WEIGHT_KG = 500
 const PHONE_RE = /^[6-9]\d{9}$/
+const PIN_CODE_RE = /^[1-9]\d{5}$/
+const CITY_RE = /^[a-zA-Z][a-zA-Z\s.-]*$/
 
 export function validateEmail(email) {
   if (!email.trim()) return 'Email is required'
@@ -109,6 +111,37 @@ export function validateShipment(values, mode = 'create') {
   else if (values.shippingDate && values.expectedDeliveryDate < values.shippingDate) {
     errors.expectedDeliveryDate = 'Expected delivery cannot be before the shipping date'
   }
+
+  return errors
+}
+
+export function validateCustomer(values) {
+  const errors = {}
+
+  const nameError = validatePersonName(values.name, 'Customer')
+  if (nameError) errors.name = nameError
+  else if (values.name.trim().length > 60) errors.name = 'Customer name must be at most 60 characters'
+
+  const emailError = validateEmail(values.email)
+  if (emailError) errors.email = emailError
+
+  const mobile = values.mobile.replace(/\s+/g, '')
+  if (!mobile) errors.mobile = 'Mobile number is required'
+  else if (!PHONE_RE.test(mobile)) errors.mobile = 'Enter a valid 10-digit mobile number'
+
+  const address = values.address.trim()
+  if (!address) errors.address = 'Address is required'
+  else if (address.length < 5) errors.address = 'Enter the full address (at least 5 characters)'
+  else if (address.length > 200) errors.address = 'Address must be at most 200 characters'
+
+  const city = values.city.trim()
+  if (!city) errors.city = 'City is required'
+  else if (city.length < 2) errors.city = 'City must be at least 2 characters'
+  else if (!CITY_RE.test(city)) errors.city = 'City can contain only letters, spaces, . -'
+
+  const postalCode = values.postalCode.trim()
+  if (!postalCode) errors.postalCode = 'Postal code is required'
+  else if (!PIN_CODE_RE.test(postalCode)) errors.postalCode = 'Enter a valid 6-digit PIN code'
 
   return errors
 }

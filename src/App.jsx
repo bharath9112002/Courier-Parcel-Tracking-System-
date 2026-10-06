@@ -3,6 +3,10 @@ import AppLayout from './components/AppLayout'
 import GuestRoute from './components/GuestRoute'
 import ProtectedRoute from './components/ProtectedRoute'
 import ComingSoon from './pages/ComingSoon'
+import CustomerCreate from './pages/customers/CustomerCreate'
+import CustomerEdit from './pages/customers/CustomerEdit'
+import CustomerList from './pages/customers/CustomerList'
+import CustomerProfile from './pages/customers/CustomerProfile'
 import Dashboard from './pages/Dashboard'
 import ForgotPassword from './pages/ForgotPassword'
 import Login from './pages/Login'
@@ -34,8 +38,10 @@ export default function App() {
           <Route path="/shipments/:id" element={<ShipmentDetails />} />
           <Route path="/shipments/:id/edit" element={<ShipmentEdit />} />
           <Route path="/tracking" element={<ComingSoon title="Track parcel" icon="pin" />} />
-          <Route path="/customers" element={<ComingSoon title="Customers" icon="users" />} />
-          <Route path="/customers/new" element={<ComingSoon title="Add customer" icon="users" />} />
+          <Route path="/customers" element={<CustomerList />} />
+          <Route path="/customers/new" element={<CustomerCreate />} />
+          <Route path="/customers/:id" element={<CustomerProfile />} />
+          <Route path="/customers/:id/edit" element={<CustomerEdit />} />
           <Route path="/reports" element={<ComingSoon title="Reports" icon="chart" />} />
           <Route path="/settings" element={<ComingSoon title="Settings" icon="settings" />} />
         </Route>

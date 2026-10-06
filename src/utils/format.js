@@ -3,6 +3,10 @@ export const formatNumber = (n) => new Intl.NumberFormat('en-IN').format(n)
 export const formatDate = (ms, options = { dateStyle: 'medium' }) =>
   new Date(ms).toLocaleString('en-IN', options)
 
+// "Priya Sharma" -> "PS"
+export const initials = (name) =>
+  name.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('')
+
 export function timeAgo(ms, now = Date.now()) {
   const minutes = Math.round((now - ms) / 60000)
   if (minutes < 1) return 'just now'
