@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import Icon from '../../components/Icon'
 import { ErrorState, PageLoader } from '../../components/LoadState'
+import DeliveryProgress from '../../components/shipments/DeliveryProgress'
 import StatusBadge from '../../components/StatusBadge'
 import { useToast } from '../../context/ToastContext'
 import { useAsync } from '../../hooks/useAsync'
@@ -10,8 +11,6 @@ import { deleteShipment, getShipment } from '../../services/shipmentService'
 import { formatDate } from '../../utils/format'
 import { daysBetween, PARCEL_TYPES, parseISODate, SHIPMENT_TYPES, todayISO } from '../../utils/shipmentOptions'
 import { STATUS } from '../../utils/shipmentStatus'
-
-const STEPS = ['pending', 'in_transit', 'out_for_delivery', 'delivered']
 
 const longDate = (iso) =>
   formatDate(parseISODate(iso), { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
@@ -23,32 +22,6 @@ function deliveryNote(s) {
   if (days < 0) return { text: `Overdue by ${-days} day${days === -1 ? '' : 's'}`, tone: 'danger' }
   if (days === 0) return { text: 'Due today', tone: 'warning' }
   return { text: `Due in ${days} day${days === 1 ? '' : 's'}`, tone: 'info' }
-}
-
-function Progress({ status }) {
-  const problem = status === 'failed' || status === 'returned'
-  // A failed/returned parcel had at least gone out for delivery.
-  const reached = problem ? STEPS.indexOf('out_for_delivery') : STEPS.indexOf(status)
-
-  return (
-    <ol className="progress">
-      {STEPS.map((step, i) => {
-        const state = i < reached ? 'done' : i === reached ? (problem ? 'done' : 'current') : 'todo'
-        return (
-          <li key={step} className={`progress__step is-${state}`}>
-            <span className="progress__dot"><Icon name={state === 'todo' ? STATUS[step].icon : 'check'} size={14} /></span>
-            <span className="progress__label">{STATUS[step].label}</span>
-          </li>
-        )
-      })}
-      {problem && (
-        <li className="progress__step is-problem">
-          <span className="progress__dot"><Icon name={STATUS[status].icon} size={14} /></span>
-          <span className="progress__label">{STATUS[status].label}</span>
-        </li>
-      )}
-    </ol>
-  )
 }
 
 export default function ShipmentDetails() {
@@ -116,6 +89,9 @@ export default function ShipmentDetails() {
           </div>
         </div>
         <div className="details-head__actions">
+          <Link to={`/tracking?ids=${s.trackingNumber}`} className="btn btn--ghost btn--sm">
+            <Icon name="pin" size={15} /> Track
+          </Link>
           <Link to={`/shipments/${id}/edit`} className="btn btn--ghost btn--sm">
             <Icon name="edit" size={15} /> Edit
           </Link>
@@ -127,7 +103,7 @@ export default function ShipmentDetails() {
 
       <section className="card">
         <h2 className="card__title">Delivery progress</h2>
-        <Progress status={s.status} />
+        <DeliveryProgress status={s.status} />
       </section>
 
       <section className="card route">

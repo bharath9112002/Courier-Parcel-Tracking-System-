@@ -17,6 +17,7 @@ import ShipmentCreate from './pages/shipments/ShipmentCreate'
 import ShipmentDetails from './pages/shipments/ShipmentDetails'
 import ShipmentEdit from './pages/shipments/ShipmentEdit'
 import ShipmentList from './pages/shipments/ShipmentList'
+import TrackParcel from './pages/tracking/TrackParcel'
 
 export default function App() {
   return (
@@ -37,7 +38,7 @@ export default function App() {
           <Route path="/shipments/new" element={<ShipmentCreate />} />
           <Route path="/shipments/:id" element={<ShipmentDetails />} />
           <Route path="/shipments/:id/edit" element={<ShipmentEdit />} />
-          <Route path="/tracking" element={<ComingSoon title="Track parcel" icon="pin" />} />
+          <Route path="/tracking" element={<TrackParcel />} />
           <Route path="/customers" element={<CustomerList />} />
           <Route path="/customers/new" element={<CustomerCreate />} />
           <Route path="/customers/:id" element={<CustomerProfile />} />
