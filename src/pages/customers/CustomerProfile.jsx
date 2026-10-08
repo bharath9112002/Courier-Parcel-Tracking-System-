@@ -4,10 +4,9 @@ import ConfirmDialog from '../../components/ConfirmDialog'
 import Icon from '../../components/Icon'
 import { ErrorState, PageLoader } from '../../components/LoadState'
 import StatusBadge from '../../components/StatusBadge'
+import { useCustomer, useCustomers } from '../../context/CustomerContext'
+import { useShipments } from '../../context/ShipmentContext'
 import { useToast } from '../../context/ToastContext'
-import { useAsync } from '../../hooks/useAsync'
-import { deleteCustomer, getCustomer } from '../../services/customerService'
-import { getShipments } from '../../services/shipmentService'
 import { formatDate, formatNumber, initials } from '../../utils/format'
 import { parseISODate } from '../../utils/shipmentOptions'
 
@@ -27,7 +26,7 @@ function customerShipments(shipments, name) {
 }
 
 function ShipmentHistory({ customer }) {
-  const { status, data: shipments, error, reload } = useAsync(getShipments, [])
+  const { status, shipments, error, reload } = useShipments()
 
   if (status === 'loading') return <PageLoader label="Loading shipments…" />
   if (status === 'error') {
@@ -91,7 +90,8 @@ export default function CustomerProfile() {
   const { id } = useParams()
   const navigate = useNavigate()
   const toast = useToast()
-  const { status, data: c, error, reload } = useAsync(() => getCustomer(id), [id])
+  const { status, data: c, error, reload } = useCustomer(id)
+  const { deleteCustomer } = useCustomers()
 
   const [confirming, setConfirming] = useState(false)
   const [deleting, setDeleting] = useState(false)

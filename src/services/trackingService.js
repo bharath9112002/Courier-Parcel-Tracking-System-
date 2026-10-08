@@ -4,25 +4,22 @@
 // from each shipment's dates and status. They are generated from a seed taken
 // from the tracking number, so a parcel always shows the same history.
 //
-// Status changes made from the tracking page are real: the shipment is saved
-// through shipmentService and the change is logged here as a tracking update,
-// kept in localStorage alongside the shipments.
+// Status changes are real: they are saved through shipmentService, which
+// records each one in the status log. The history shown here is the dummy
+// scans up to the first logged change, then the logged changes.
 
 import { mulberry32 } from '../data/mockData'
 import { addDays, daysBetween, parseISODate, SHIPMENT_TYPES, toISODate, todayISO } from '../utils/shipmentOptions'
-import { STATUS } from '../utils/shipmentStatus'
+import { STATUS, STATUS_FLOW } from '../utils/shipmentStatus'
 import { TRACKING_PATTERN } from '../utils/tracking'
-import { getShipments, updateShipment } from './shipmentService'
+import { getStatusLog } from './statusLog'
 
-const UPDATES_KEY = 'courier_tracking_updates'
 const RECENT_KEY = 'courier_recent_tracking'
 const RECENT_LIMIT = 6
 export const MAX_TRACK = 10
 
 const MINUTE = 60 * 1000
 const HOUR = 60 * MINUTE
-
-export const MILESTONES = ['pending', 'in_transit', 'out_for_delivery', 'delivered']
 
 // ---------- Search ----------
 
@@ -34,21 +31,6 @@ export function parseTrackingInput(text) {
     valid: unique.filter((t) => TRACKING_PATTERN.test(t)),
     invalid: unique.filter((t) => !TRACKING_PATTERN.test(t)),
   }
-}
-
-export async function findByTrackingNumbers(numbers) {
-  const all = await getShipments()
-  const byNumber = new Map(all.map((s) => [s.trackingNumber, s]))
-  return numbers.map((number) => ({ number, shipment: byNumber.get(number) ?? null }))
-}
-
-// A few parcels in different states, so there is something to try on a fresh install.
-export async function getSampleTrackingNumbers() {
-  const all = await getShipments()
-  return ['in_transit', 'out_for_delivery', 'delivered', 'failed']
-    .map((status) => all.find((s) => s.status === status))
-    .filter(Boolean)
-    .map((s) => s.trackingNumber)
 }
 
 // ---------- Recent searches (per browser) ----------
@@ -83,28 +65,6 @@ export function clearRecentSearches() {
   return []
 }
 
-// ---------- Manual status updates ----------
-
-const getAllUpdates = () => read(UPDATES_KEY, {})
-
-export const getUpdates = (shipmentId) => getAllUpdates()[shipmentId] ?? []
-
-export async function updateParcelStatus(shipment, { status, location, note }, user) {
-  const saved = await updateShipment(shipment.id, { ...shipment, status })
-  const update = {
-    id: crypto.randomUUID(),
-    from: shipment.status,
-    status,
-    location: location.trim(),
-    note: note.trim(),
-    by: user?.name ?? 'Staff',
-    time: Date.now(),
-  }
-  const all = getAllUpdates()
-  write(UPDATES_KEY, { ...all, [shipment.id]: [...(all[shipment.id] ?? []), update] })
-  return saved
-}
-
 // ---------- Dummy scan events ----------
 
 function hashSeed(text) {
@@ -115,7 +75,7 @@ function hashSeed(text) {
 
 // "1745 Main St, Phoenix, Arizona 85001" -> "Phoenix". Falls back to the last
 // part without digits for addresses typed in other shapes.
-export function cityFrom(address) {
+function cityFrom(address) {
   const parts = address.split(',').map((p) => p.trim()).filter(Boolean)
   if (parts.length >= 3) return parts[parts.length - 2]
   const last = (parts[parts.length - 1] ?? '').replace(/\d+/g, '').trim()
@@ -163,13 +123,25 @@ function generateEvents(s, now) {
   const stops = stopsFor(s, rand)
   const today = todayISO()
   const events = []
-  const add = (code, time, title, location, detail) =>
-    events.push({ id: `${code}-${events.length}`, code, time, title, location, detail, source: 'system' })
+  // `status` is set on the scan that moved the parcel into that status.
+  const add = (code, time, title, location, detail, status) =>
+    events.push({ id: `${code}-${events.length}`, code, time, title, location, detail, status, source: 'system' })
 
   const booked = Math.min(at(s.shippingDate, 9, Math.floor(rand() * 50)), Date.parse(s.createdAt) || Infinity, now)
   const service = SHIPMENT_TYPES[s.shipmentType]?.label.toLowerCase() ?? 'standard'
-  add('booked', booked, 'Shipment booked', stops.sender.name, `Label created for ${service} delivery`)
+  add('booked', booked, 'Shipment booked', stops.sender.name, `Label created for ${service} delivery`, 'pending')
   if (s.status === 'pending') return { events, stops }
+
+  if (s.status === 'cancelled') {
+    const cancelAt = Math.min(Math.max(at(s.shippingDate, 8), booked + 2 * HOUR), now)
+    if (rand() < 0.35 && s.shippingDate <= today) {
+      add('picked_up', Math.min(cancelAt - HOUR, now), 'Picked up', stops.sender.name, 'Collected from sender by courier', 'picked_up')
+      add('cancelled', cancelAt, 'Shipment cancelled', stops.sender.name, "Cancelled at the sender's request. Parcel handed back", 'cancelled')
+    } else {
+      add('cancelled', cancelAt, 'Shipment cancelled', stops.sender.name, "Cancelled at the sender's request before pickup", 'cancelled')
+    }
+    return { events, stops }
+  }
 
   // Out-for-delivery day: the expected date, unless that is still ahead.
   const lastDay = s.expectedDeliveryDate < today ? s.expectedDeliveryDate : today
@@ -190,7 +162,8 @@ function generateEvents(s, now) {
     ['arrived_dest', 'Arrived at delivery center', stops.destHub.name, 'Parcel ready for last-mile delivery'],
   ]
 
-  add('picked_up', Math.min(pickup, now), 'Picked up', stops.sender.name, 'Collected from sender by courier')
+  add('picked_up', Math.min(pickup, now), 'Picked up', stops.sender.name, 'Collected from sender by courier', 'picked_up')
+  if (s.status === 'picked_up') return { events, stops }
 
   // Still in transit: only show the scans that would have happened by now,
   // in proportion to how much of the journey has passed.
@@ -205,21 +178,21 @@ function generateEvents(s, now) {
   const transitEnd = s.status === 'in_transit' ? Math.min(now, at(s.expectedDeliveryDate, 6)) : outForDelivery - 45 * MINUTE
   const times = spread(rand, transit.length, pickup, Math.max(transitEnd, pickup + transit.length * HOUR))
   transit.slice(0, shown).forEach(([code, title, location, detail], i) => {
-    add(code, Math.min(times[i], now), title, location, detail)
+    add(code, Math.min(times[i], now), title, location, detail, i === 0 ? 'in_transit' : undefined)
   })
   if (s.status === 'in_transit') return { events, stops }
 
-  add('out_for_delivery', outForDelivery, 'Out for delivery', stops.destHub.name, 'With delivery agent on the local route')
+  add('out_for_delivery', outForDelivery, 'Out for delivery', stops.destHub.name, 'With delivery agent on the local route', 'out_for_delivery')
   if (s.status === 'out_for_delivery') return { events, stops }
 
   const attempt = Math.min(outForDelivery + (2 + rand() * 5) * HOUR, now)
   if (s.status === 'delivered') {
-    add('delivered', attempt, 'Delivered', stops.receiver.name, `Received by ${s.receiverName}`)
+    add('delivered', attempt, 'Delivered', stops.receiver.name, `Received by ${s.receiverName}`, 'delivered')
     return { events, stops }
   }
 
   const reason = FAIL_REASONS[Math.floor(rand() * FAIL_REASONS.length)]
-  add('failed', attempt, 'Delivery attempt failed', stops.receiver.name, reason)
+  add('failed', attempt, 'Delivery attempt failed', stops.receiver.name, reason, 'failed')
   if (s.status === 'failed') {
     add('held', Math.min(attempt + 2 * HOUR, now), 'Held at delivery center', stops.destHub.name, 'Awaiting re-attempt or receiver instructions')
     return { events, stops }
@@ -228,50 +201,55 @@ function generateEvents(s, now) {
   // returned
   const returnStart = Math.min(at(addDays(lastDay, 1), 10), now)
   add('return_started', Math.min(Math.max(returnStart, attempt + HOUR), now), 'Return to sender initiated', stops.destHub.name, 'Undeliverable after attempt')
-  add('returned', Math.min(Math.max(at(addDays(lastDay, 3), 15), returnStart + 2 * HOUR), now), 'Returned to sender', stops.sender.name, `Handed back to ${s.senderName}`)
+  add('returned', Math.min(Math.max(at(addDays(lastDay, 3), 15), returnStart + 2 * HOUR), now), 'Returned to sender', stops.sender.name, `Handed back to ${s.senderName}`, 'returned')
   return { events, stops }
 }
 
+// The scan code a logged status change counts as, for placing the parcel.
 const STATUS_EVENT = {
   pending: 'booked',
+  picked_up: 'picked_up',
   in_transit: 'departed_hub',
   out_for_delivery: 'out_for_delivery',
   delivered: 'delivered',
   failed: 'failed',
+  cancelled: 'cancelled',
   returned: 'returned',
 }
 
-// Full history, newest first: generated scans up to the first manual update,
-// then each manual update. A status changed from the Edit Shipment form (with
-// no update logged here) is shown as one final entry.
+// Full history, newest first: generated scans up to the first logged change,
+// then each logged change. A status changed before changes were logged shows
+// as one final entry.
 export function buildTracking(s, now = Date.now()) {
-  const updates = getUpdates(s.id)
-  const base = updates.length ? { ...s, status: updates[0].from } : s
-  const generated = generateEvents(base, updates.length ? updates[0].time : now)
+  const log = getStatusLog(s.id)
+  const base = log.length ? { ...s, status: log[0].from } : s
+  const generated = generateEvents(base, log.length ? log[0].time : now)
   const events = [...generated.events]
+  const lastLocation = () => events[events.length - 1].location
 
-  for (const u of updates) {
+  for (const u of log) {
     events.push({
       id: u.id,
       code: STATUS_EVENT[u.status],
+      status: u.status,
       time: u.time,
       title: `Status updated: ${STATUS[u.status].label}`,
-      location: u.location || events[events.length - 1].location,
+      location: u.location || lastLocation(),
       detail: u.note,
       by: u.by,
       source: 'manual',
     })
   }
 
-  const lastStatus = updates.length ? updates[updates.length - 1].status : s.status
+  const lastStatus = log.length ? log[log.length - 1].status : s.status
   if (lastStatus !== s.status) {
-    const time = Math.max(Date.parse(s.updatedAt) || now, events[events.length - 1].time)
     events.push({
       id: 'edited',
       code: STATUS_EVENT[s.status],
-      time,
+      status: s.status,
+      time: Math.max(Date.parse(s.updatedAt) || now, events[events.length - 1].time),
       title: `Status updated: ${STATUS[s.status].label}`,
-      location: events[events.length - 1].location,
+      location: lastLocation(),
       detail: 'Changed from the shipment record',
       source: 'manual',
     })
@@ -283,8 +261,19 @@ export function buildTracking(s, now = Date.now()) {
     stops: generated.stops,
     location: currentLocation(s, events, generated.stops),
     estimate: deliveryEstimate(s, events),
-    milestones: milestoneTimes(s, events),
+    milestones: milestoneTimes(events),
   }
+}
+
+// Each change of status, newest first: { status, from, time, by, location, note }.
+export function statusHistory(s, now = Date.now()) {
+  const changes = []
+  for (const e of [...buildTracking(s, now).events].reverse()) {
+    const from = changes[changes.length - 1]?.status ?? null
+    if (!e.status || e.status === from) continue
+    changes.push({ id: e.id, status: e.status, from, time: e.time, by: e.by, location: e.location, note: e.detail, source: e.source })
+  }
+  return changes.reverse()
 }
 
 // ---------- Derived views ----------
@@ -304,6 +293,10 @@ function currentLocation(s, events, stops) {
   if (s.status === 'pending') {
     label = `With sender in ${stops.origin}`
     detail = 'Waiting to be picked up'
+  } else if (s.status === 'cancelled') {
+    index = 0
+    label = `With sender in ${stops.origin}`
+    detail = 'Shipment cancelled'
   } else if (s.status === 'delivered') {
     index = route.length - 1
     label = s.deliveryAddress
@@ -325,18 +318,21 @@ function currentLocation(s, events, stops) {
     index += 1
   }
 
-  return { label, detail, time: last.time, route, index, moving, problem: s.status === 'failed' }
+  return { label, detail, time: last.time, route, index, moving, problem: s.status === 'failed' || s.status === 'cancelled' }
 }
 
 function deliveryEstimate(s, events) {
   const today = todayISO()
-  const final = events.find((e) => e.code === 'delivered' || e.code === 'returned')
+  const final = events.find((e) => e.status === s.status)
 
   if (s.status === 'delivered') {
     return { kind: 'done', date: final?.time ?? parseISODate(s.expectedDeliveryDate), label: 'Delivered on', note: deliveredNote(s, final), tone: 'success' }
   }
   if (s.status === 'returned') {
-    return { kind: 'done', date: final?.time ?? Date.now(), label: 'Returned on', note: 'Parcel is back with the sender', tone: 'neutral' }
+    return { kind: 'done', date: final?.time ?? Date.now(), label: 'Returned on', note: 'Parcel is back with the sender', tone: 'pink' }
+  }
+  if (s.status === 'cancelled') {
+    return { kind: 'done', date: final?.time ?? Date.now(), label: 'Cancelled on', note: 'This shipment will not be delivered', tone: 'slate' }
   }
   if (s.status === 'failed') {
     return { kind: 'date', date: parseISODate(addDays(today, 1)), label: 'Next attempt', note: 'Delivery will be re-attempted on the next working day', tone: 'danger' }
@@ -371,16 +367,13 @@ function deliveredNote(s, final) {
   return 'On time'
 }
 
-// When each milestone was first reached (oldest scan), or null.
-function milestoneTimes(s, events) {
+// When each status was first reached (oldest scan), or null.
+function milestoneTimes(events) {
   const oldestFirst = [...events].reverse()
-  const first = (codes) => oldestFirst.find((e) => codes.includes(e.code))?.time ?? null
-  return {
-    pending: first(['booked']),
-    in_transit: first(['picked_up', 'arrived_hub', 'departed_hub', 'arrived_dest']),
-    out_for_delivery: first(['out_for_delivery']),
-    delivered: first(['delivered']),
-    failed: first(['failed']),
-    returned: first(['returned']),
-  }
+  return Object.fromEntries(
+    [...STATUS_FLOW, 'failed', 'cancelled', 'returned'].map((status) => [
+      status,
+      oldestFirst.find((e) => e.status === status)?.time ?? null,
+    ]),
+  )
 }

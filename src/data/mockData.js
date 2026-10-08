@@ -32,16 +32,17 @@ const pick = (rand, list) => list[Math.floor(rand() * list.length)]
 
 function pickStatus(rand, ageHours) {
   const r = rand()
-  if (ageHours < 4) return r < 0.7 ? 'pending' : 'in_transit'
-  if (ageHours < 24) return r < 0.45 ? 'pending' : r < 0.85 ? 'in_transit' : 'out_for_delivery'
+  if (ageHours < 4) return r < 0.55 ? 'pending' : r < 0.85 ? 'picked_up' : r < 0.97 ? 'in_transit' : 'cancelled'
+  if (ageHours < 24) return r < 0.3 ? 'pending' : r < 0.45 ? 'picked_up' : r < 0.85 ? 'in_transit' : 'out_for_delivery'
   if (ageHours < 72) {
     if (r < 0.12) return 'pending'
     if (r < 0.35) return 'in_transit'
     if (r < 0.5) return 'out_for_delivery'
     return r < 0.97 ? 'delivered' : 'failed'
   }
-  if (r < 0.95) return 'delivered'
-  if (r < 0.975) return 'failed'
+  if (r < 0.94) return 'delivered'
+  if (r < 0.965) return 'failed'
+  if (r < 0.975) return 'cancelled'
   if (r < 0.99) return 'returned'
   return 'in_transit'
 }

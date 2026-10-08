@@ -4,9 +4,8 @@ import ConfirmDialog from '../../components/ConfirmDialog'
 import Icon from '../../components/Icon'
 import { ErrorState } from '../../components/LoadState'
 import Pagination from '../../components/Pagination'
+import { useCustomers } from '../../context/CustomerContext'
 import { useToast } from '../../context/ToastContext'
-import { useAsync } from '../../hooks/useAsync'
-import { deleteCustomer, getCustomers } from '../../services/customerService'
 import { formatDate, initials } from '../../utils/format'
 
 const DEFAULTS = { q: '', city: 'all', sort: 'newest', page: '1', size: '10' }
@@ -41,7 +40,7 @@ export default function CustomerList() {
   const navigate = useNavigate()
   const toast = useToast()
   const [params, setParams] = useSearchParams()
-  const { status: loadStatus, data: customers, error, reload, setData } = useAsync(getCustomers, [])
+  const { status: loadStatus, customers, error, reload, deleteCustomer } = useCustomers()
 
   // Filters live in the URL so they survive a refresh and the back button.
   const filters = readFilters(params)
@@ -98,7 +97,6 @@ export default function CustomerList() {
     setDeleteError('')
     try {
       await deleteCustomer(toDelete.id)
-      setData((list) => list.filter((c) => c.id !== toDelete.id))
       toast.success(`Customer ${toDelete.name} deleted`)
       closeDelete()
     } catch (err) {

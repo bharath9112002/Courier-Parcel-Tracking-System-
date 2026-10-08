@@ -7,6 +7,7 @@ const NAV = [
   { to: '/dashboard', icon: 'grid', label: 'Dashboard' },
   { to: '/shipments', icon: 'package', label: 'Shipments' },
   { to: '/tracking', icon: 'pin', label: 'Track parcel' },
+  { to: '/delivery-status', icon: 'activity', label: 'Delivery status' },
   { to: '/customers', icon: 'users', label: 'Customers' },
   { to: '/reports', icon: 'chart', label: 'Reports' },
 ]

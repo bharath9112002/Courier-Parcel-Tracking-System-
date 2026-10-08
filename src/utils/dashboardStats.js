@@ -3,7 +3,7 @@ import { startOfDay } from '../data/mockData'
 const DAY = 24 * 60 * 60 * 1000
 const TREND_DAYS = 14
 
-const IN_TRANSIT = ['in_transit', 'out_for_delivery']
+const IN_TRANSIT = ['picked_up', 'in_transit', 'out_for_delivery']
 const FINISHED = ['delivered', 'failed', 'returned']
 
 const pctChange = (current, previous) =>

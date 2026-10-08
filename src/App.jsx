@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import AppLayout from './components/AppLayout'
 import GuestRoute from './components/GuestRoute'
+import ModuleProviders from './context/ModuleProviders'
 import ProtectedRoute from './components/ProtectedRoute'
 import ComingSoon from './pages/ComingSoon'
 import CustomerCreate from './pages/customers/CustomerCreate'
@@ -8,6 +9,7 @@ import CustomerEdit from './pages/customers/CustomerEdit'
 import CustomerList from './pages/customers/CustomerList'
 import CustomerProfile from './pages/customers/CustomerProfile'
 import Dashboard from './pages/Dashboard'
+import DeliveryStatus from './pages/delivery/DeliveryStatus'
 import ForgotPassword from './pages/ForgotPassword'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
@@ -31,7 +33,7 @@ export default function App() {
       </Route>
 
       <Route element={<ProtectedRoute />}>
-        <Route element={<AppLayout />}>
+        <Route element={<ModuleProviders><AppLayout /></ModuleProviders>}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/shipments" element={<ShipmentList />} />
@@ -39,6 +41,7 @@ export default function App() {
           <Route path="/shipments/:id" element={<ShipmentDetails />} />
           <Route path="/shipments/:id/edit" element={<ShipmentEdit />} />
           <Route path="/tracking" element={<TrackParcel />} />
+          <Route path="/delivery-status" element={<DeliveryStatus />} />
           <Route path="/customers" element={<CustomerList />} />
           <Route path="/customers/new" element={<CustomerCreate />} />
           <Route path="/customers/:id" element={<CustomerProfile />} />

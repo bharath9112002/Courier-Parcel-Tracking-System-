@@ -1,0 +1,323 @@
+/* ---------- Status tiles ---------- */
+.status-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.status-tile {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: center;
+  padding: 14px;
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-left: 4px solid var(--tone);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+.status-tile:hover {
+  background: color-mix(in srgb, var(--tone) 6%, var(--surface));
+}
+.status-tile:focus-visible {
+  outline: 3px solid var(--primary-soft);
+  outline-offset: 2px;
+}
+.status-tile.is-active {
+  background: color-mix(in srgb, var(--tone) 10%, var(--surface));
+  border-color: var(--tone);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tone) 18%, transparent);
+}
+.status-tile__icon {
+  display: grid;
+  grid-row: span 2;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 12%, transparent);
+  border-radius: 11px;
+}
+.status-tile strong {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--text-h);
+}
+.status-tile span:last-child {
+  font-size: 13px;
+  font-weight: 600;
+}
+@media (max-width: 480px) {
+  .status-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---------- List + recent changes ---------- */
+.delivery-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 18px;
+  align-items: start;
+}
+.delivery-grid > .card {
+  margin-top: 0;
+}
+.delivery-grid + .card {
+  margin-top: 18px;
+}
+@media (max-width: 1100px) {
+  .delivery-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.delivery-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.delivery-toolbar h2 {
+  font-size: 17px;
+}
+.delivery-toolbar .toolbar__search {
+  flex: 0 1 300px;
+}
+.delivery-action {
+  text-align: right;
+}
+@media (max-width: 760px) {
+  .table td.delivery-action {
+    justify-content: flex-end;
+    padding-top: 10px;
+  }
+}
+.status-final {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.recent-changes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.recent-changes li {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+}
+.recent-changes li + li {
+  border-top: 1px solid var(--border);
+}
+.recent-changes p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ---------- Status guide ---------- */
+.status-guide-card {
+  margin-top: 18px;
+}
+.status-guide {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.status-guide li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.status-guide p {
+  margin: 0;
+  font-size: 13px;
+}
+.status-guide__next {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+/* ---------- Status history ---------- */
+.status-history {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.status-history__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 14px;
+  padding-bottom: 18px;
+}
+.status-history__item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 34px;
+  bottom: 4px;
+  left: 14px;
+  width: 2px;
+  background: var(--border);
+}
+.status-history__dot {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 12%, var(--surface));
+  border-radius: 50%;
+}
+.status-history__item.is-current .status-history__dot {
+  color: #fff;
+  background: var(--tone);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--tone) 18%, transparent);
+}
+.status-history__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 3px;
+}
+.status-history__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.status-history__from {
+  font-size: 13px;
+}
+.status-history__current {
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-h);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.status-history time {
+  font-size: 13px;
+  color: var(--muted);
+}
+.status-history p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-h);
+}
+.status-history__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.status-history__meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ---------- Update dialog ---------- */
+.status-now {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.status-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 0;
+  border: none;
+}
+.status-options legend {
+  margin-bottom: 8px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+.status-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.status-option:hover {
+  border-color: color-mix(in srgb, var(--primary) 50%, var(--border));
+}
+.status-option.is-selected {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
+.status-option input {
+  margin-top: 4px;
+  accent-color: var(--primary);
+}
+.status-option__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 13px;
+}
+.modal__box--form {
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+/* Problem step in the progress tracker takes its status colour. */
+.progress__step.is-problem::before {
+  background: var(--tone, var(--danger));
+}
+.is-problem .progress__dot {
+  background: var(--tone, var(--danger));
+  border-color: var(--tone, var(--danger));
+}

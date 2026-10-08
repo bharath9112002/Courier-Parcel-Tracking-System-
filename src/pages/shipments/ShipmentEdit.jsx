@@ -2,18 +2,20 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import { ErrorState, PageLoader } from '../../components/LoadState'
 import ShipmentForm from '../../components/shipments/ShipmentForm'
+import { useAuth } from '../../context/AuthContext'
+import { useShipment, useShipments } from '../../context/ShipmentContext'
 import { useToast } from '../../context/ToastContext'
-import { useAsync } from '../../hooks/useAsync'
-import { getShipment, updateShipment } from '../../services/shipmentService'
 
 export default function ShipmentEdit() {
   const { id } = useParams()
   const navigate = useNavigate()
   const toast = useToast()
-  const { status, data: shipment, error, reload } = useAsync(() => getShipment(id), [id])
+  const { user } = useAuth()
+  const { status, data: shipment, error, reload } = useShipment(id)
+  const { updateShipment } = useShipments()
 
   const handleSubmit = async (values) => {
-    const updated = await updateShipment(id, values)
+    const updated = await updateShipment(id, values, { by: user.name, note: 'Changed from the Edit shipment form' })
     toast.success(`Shipment ${updated.trackingNumber} updated`)
     navigate(`/shipments/${id}`, { replace: true })
   }

@@ -1,14 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Icon from '../Icon'
 import DeliveryProgress from '../shipments/DeliveryProgress'
 import StatusBadge from '../StatusBadge'
-import StatusUpdateDialog from './StatusUpdateDialog'
+import StatusUpdateDialog from '../shipments/StatusUpdateDialog'
 import { useToast } from '../../context/ToastContext'
-import { buildTracking } from '../../services/trackingService'
+import { useTracking } from '../../context/TrackingContext'
 import { formatDate } from '../../utils/format'
 import { PARCEL_TYPES, parseISODate, SHIPMENT_TYPES } from '../../utils/shipmentOptions'
-import { STATUS } from '../../utils/shipmentStatus'
+import { isFinal, STATUS } from '../../utils/shipmentStatus'
 
 const EVENT_ICON = {
   booked: 'package',
@@ -18,12 +18,13 @@ const EVENT_ICON = {
   arrived_dest: 'pin',
   out_for_delivery: 'truck',
   delivered: 'check',
-  failed: 'x',
+  failed: 'alert',
+  cancelled: 'ban',
   held: 'clock',
   return_started: 'undo',
   returned: 'undo',
 }
-const EVENT_TONE = { delivered: 'success', failed: 'danger', held: 'warning', return_started: 'neutral', returned: 'neutral' }
+const EVENT_TONE = { delivered: 'success', failed: 'danger', held: 'warning', cancelled: 'slate', return_started: 'pink', returned: 'pink' }
 
 const dayLabel = (ms) => formatDate(ms, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
 const timeLabel = (ms) => formatDate(ms, { hour: 'numeric', minute: '2-digit' })
@@ -97,12 +98,12 @@ function History({ events }) {
   )
 }
 
-export default function TrackingDetail({ shipment: s, onUpdated }) {
+export default function TrackingDetail({ shipment: s }) {
   const toast = useToast()
   const [updating, setUpdating] = useState(false)
   const [copied, setCopied] = useState(false)
-  // `s` is replaced after a status update, which rebuilds the history.
-  const t = useMemo(() => buildTracking(s), [s])
+  const { getTracking } = useTracking()
+  const t = getTracking(s)
   const { location, estimate } = t
 
   const copyTracking = async () => {
@@ -118,7 +119,6 @@ export default function TrackingDetail({ shipment: s, onUpdated }) {
   const handleSaved = (updated) => {
     setUpdating(false)
     toast.success(`${updated.trackingNumber} marked as ${STATUS[updated.status].label.toLowerCase()}`)
-    onUpdated(updated)
   }
 
   return (
@@ -144,7 +144,8 @@ export default function TrackingDetail({ shipment: s, onUpdated }) {
           <Link to={`/shipments/${s.id}`} className="btn btn--ghost btn--sm">
             <Icon name="package" size={15} /> View shipment
           </Link>
-          <button type="button" className="btn btn--outline btn--sm" onClick={() => setUpdating(true)}>
+          <button type="button" className="btn btn--outline btn--sm" onClick={() => setUpdating(true)}
+            disabled={isFinal(s.status)} title={isFinal(s.status) ? `${STATUS[s.status].label} is a final status` : undefined}>
             <Icon name="edit" size={15} /> Update status
           </button>
         </div>

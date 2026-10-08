@@ -4,17 +4,8 @@ import Icon from '../../components/Icon'
 import { ErrorState, PageLoader } from '../../components/LoadState'
 import StatusBadge from '../../components/StatusBadge'
 import TrackingDetail from '../../components/tracking/TrackingDetail'
-import { useAsync } from '../../hooks/useAsync'
-import {
-  addRecentSearches,
-  buildTracking,
-  clearRecentSearches,
-  findByTrackingNumbers,
-  getRecentSearches,
-  getSampleTrackingNumbers,
-  MAX_TRACK,
-  parseTrackingInput,
-} from '../../services/trackingService'
+import { useTracking } from '../../context/TrackingContext'
+import { MAX_TRACK, parseTrackingInput } from '../../services/trackingService'
 import { formatDate } from '../../utils/format'
 import { STATUS } from '../../utils/shipmentStatus'
 
@@ -38,7 +29,8 @@ function Chips({ label, numbers, onPick, onClear }) {
 
 function ResultCard({ result, active, onSelect }) {
   const { number, shipment: s } = result
-  const t = useMemo(() => s && buildTracking(s), [s])
+  const { getTracking } = useTracking()
+  const t = s && getTracking(s)
 
   if (!s) {
     return (
@@ -83,15 +75,14 @@ function StatusOverview({ results }) {
 }
 
 function Results({ numbers, active, onSelect }) {
-  const { status, data: results, error, reload, setData } = useAsync(() => findByTrackingNumbers(numbers), [numbers.join()])
+  const { status, error, reload, lookup } = useTracking()
 
   if (status === 'loading') return <PageLoader label={`Tracking ${numbers.length === 1 ? 'parcel' : 'parcels'}…`} />
   if (status === 'error') return <ErrorState error={error} onRetry={reload} />
 
+  const results = lookup(numbers)
   const found = results.filter((r) => r.shipment)
   const current = found.find((r) => r.number === active) ?? found[0]
-  const replace = (updated) =>
-    setData((list) => list.map((r) => (r.shipment?.id === updated.id ? { ...r, shipment: updated } : r)))
 
   if (!found.length) {
     return (
@@ -120,7 +111,7 @@ function Results({ numbers, active, onSelect }) {
           </div>
         </section>
       )}
-      <TrackingDetail key={current.number} shipment={current.shipment} onUpdated={replace} />
+      <TrackingDetail key={current.number} shipment={current.shipment} />
     </>
   )
 }
@@ -140,13 +131,12 @@ export default function TrackParcel() {
   }
   const [inputError, setInputError] = useState('')
   const [notice, setNotice] = useState('')
-  const [recent, setRecent] = useState(getRecentSearches)
-  const samples = useAsync(getSampleTrackingNumbers, [])
+  const { recent, addRecent, clearRecent, samples, status } = useTracking()
 
   const track = (list) => {
     setText(list.join(', '))
     setInputError('')
-    setRecent(addRecentSearches(list))
+    addRecent(list)
     setParams({ ids: list.join(',') })
   }
 
@@ -218,9 +208,9 @@ export default function TrackParcel() {
         )}
         {notice && <div className="alert alert--warning" role="status">{notice}</div>}
 
-        <Chips label="Recent:" numbers={recent} onPick={track} onClear={() => setRecent(clearRecentSearches())} />
-        {!numbers.length && samples.status === 'success' && (
-          <Chips label="Try a sample:" numbers={samples.data} onPick={track} />
+        <Chips label="Recent:" numbers={recent} onPick={track} onClear={clearRecent} />
+        {!numbers.length && status === 'success' && (
+          <Chips label="Try a sample:" numbers={samples} onPick={track} />
         )}
       </form>
 

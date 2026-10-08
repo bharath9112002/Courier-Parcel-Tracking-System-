@@ -143,6 +143,19 @@ const PATHS = {
   arrowLeft: <path d="M19 12H5m6-6-6 6 6 6" />,
   trendUp:<path d="m3 17 6-6 4 4 8-8M15 7h6v6" />,
   trendDown: <path d="m3 7 6 6 4-4 8 8M15 17h6v-6" />,
+  alert: (
+    <>
+      <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+      <path d="M12 9v4M12 17h.01" />
+    </>
+  ),
+  ban: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m5.6 5.6 12.8 12.8" />
+    </>
+  ),
+  activity: <path d="M22 12h-4l-3 9L9 3l-3 9H2" />,
 }
 
 export default function Icon({ name, size = 20, className }) {

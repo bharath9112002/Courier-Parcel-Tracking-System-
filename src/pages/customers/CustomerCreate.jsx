@@ -1,14 +1,15 @@
 import { Link, useNavigate } from 'react-router-dom'
 import CustomerForm from '../../components/customers/CustomerForm'
 import Icon from '../../components/Icon'
+import { useCustomers } from '../../context/CustomerContext'
 import { useToast } from '../../context/ToastContext'
-import { createCustomer } from '../../services/customerService'
 
 const EMPTY = { name: '', email: '', mobile: '', address: '', city: '', postalCode: '' }
 
 export default function CustomerCreate() {
   const navigate = useNavigate()
   const toast = useToast()
+  const { createCustomer } = useCustomers()
 
   const handleSubmit = async (values) => {
     const customer = await createCustomer(values)

@@ -1,5 +1,38 @@
 const USERS_KEY = 'courier_users'
 const CURRENT_USER_KEY = 'courier_current_user'
+const VERSION_KEY = 'courier_data_version'
+
+// Bump this when the stored data's shape changes, to clear out old demo data
+// (shipments, customers, status history) so it is seeded again.
+const DATA_VERSION = 2
+
+// Every key this app writes. Anything else in localStorage was left by other
+// apps served from the same address (e.g. localhost:5173) and is removed.
+const APP_KEYS = [
+  USERS_KEY,
+  CURRENT_USER_KEY,
+  VERSION_KEY,
+  'courier_shipments',
+  'courier_customers',
+  'courier_tracking_updates',
+  'courier_recent_tracking',
+]
+// Accounts and the signed-in session survive a data reset.
+const KEEP_ON_RESET = [USERS_KEY, CURRENT_USER_KEY, VERSION_KEY]
+
+export function cleanStorage() {
+  try {
+    for (const key of Object.keys(localStorage)) {
+      if (!APP_KEYS.includes(key)) localStorage.removeItem(key)
+    }
+    if (localStorage.getItem(VERSION_KEY) !== String(DATA_VERSION)) {
+      for (const key of APP_KEYS) if (!KEEP_ON_RESET.includes(key)) localStorage.removeItem(key)
+      localStorage.setItem(VERSION_KEY, String(DATA_VERSION))
+    }
+  } catch {
+    // Storage blocked (e.g. private mode): nothing to clean.
+  }
+}
 
 function read(key, fallback) {
   try {

@@ -2,15 +2,15 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import CustomerForm from '../../components/customers/CustomerForm'
 import Icon from '../../components/Icon'
 import { ErrorState, PageLoader } from '../../components/LoadState'
+import { useCustomer, useCustomers } from '../../context/CustomerContext'
 import { useToast } from '../../context/ToastContext'
-import { useAsync } from '../../hooks/useAsync'
-import { getCustomer, updateCustomer } from '../../services/customerService'
 
 export default function CustomerEdit() {
   const { id } = useParams()
   const navigate = useNavigate()
   const toast = useToast()
-  const { status, data: customer, error, reload } = useAsync(() => getCustomer(id), [id])
+  const { status, data: customer, error, reload } = useCustomer(id)
+  const { updateCustomer } = useCustomers()
 
   const handleSubmit = async (values) => {
     const updated = await updateCustomer(id, values)

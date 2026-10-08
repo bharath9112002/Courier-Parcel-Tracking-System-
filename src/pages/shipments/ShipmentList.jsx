@@ -5,9 +5,8 @@ import Icon from '../../components/Icon'
 import { ErrorState } from '../../components/LoadState'
 import Pagination from '../../components/Pagination'
 import StatusBadge from '../../components/StatusBadge'
+import { useShipments } from '../../context/ShipmentContext'
 import { useToast } from '../../context/ToastContext'
-import { useAsync } from '../../hooks/useAsync'
-import { deleteShipment, getShipments } from '../../services/shipmentService'
 import { formatDate } from '../../utils/format'
 import { PARCEL_TYPES, parseISODate, SHIPMENT_TYPES, STATUS_OPTIONS } from '../../utils/shipmentOptions'
 
@@ -39,7 +38,7 @@ export default function ShipmentList() {
   const navigate = useNavigate()
   const toast = useToast()
   const [params, setParams] = useSearchParams()
-  const { status: loadStatus, data: shipments, error, reload, setData } = useAsync(getShipments, [])
+  const { status: loadStatus, shipments, error, reload, deleteShipment } = useShipments()
 
   // Filters live in the URL so they survive a refresh and the back button.
   const filters = readFilters(params)
@@ -95,7 +94,6 @@ export default function ShipmentList() {
     setDeleteError('')
     try {
       await deleteShipment(toDelete.id)
-      setData((list) => list.filter((s) => s.id !== toDelete.id))
       toast.success(`Shipment ${toDelete.trackingNumber} deleted`)
       closeDelete()
     } catch (err) {

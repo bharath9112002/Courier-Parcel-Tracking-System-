@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Icon from '../components/Icon'
 import QuickActions from '../components/dashboard/QuickActions'
@@ -6,23 +5,13 @@ import RecentActivity from '../components/dashboard/RecentActivity'
 import StatTile from '../components/dashboard/StatTile'
 import SuccessRateCard from '../components/dashboard/SuccessRateCard'
 import { useAuth } from '../context/AuthContext'
-import { generateMockData } from '../data/mockData'
-import { computeDashboardStats, recentActivities } from '../utils/dashboardStats'
+import { useDashboard } from '../context/DashboardContext'
 import { formatDate, formatNumber, greeting } from '../utils/format'
 
 export default function Dashboard() {
   const { user } = useAuth()
 
-  // Snapshot taken once per visit, so figures don't shift while the page is open.
-  const [{ stats, activities, now }] = useState(() => {
-    const now = Date.now()
-    const data = generateMockData(now)
-    return {
-      now,
-      stats: computeDashboardStats(data, now),
-      activities: recentActivities(data.shipments),
-    }
-  })
+  const { stats, activities, now } = useDashboard()
 
   return (
     <main className="page">

@@ -116,12 +116,6 @@ export async function getCustomers() {
   return seeding
 }
 
-export async function getCustomer(id) {
-  const customer = (await getCustomers()).find((c) => c.id === id)
-  if (!customer) throw new ApiError(NOT_FOUND, 404)
-  return customer
-}
-
 export async function createCustomer(data) {
   const all = await getCustomers()
   assertUnique(all, clean(data))

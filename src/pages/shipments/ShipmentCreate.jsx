@@ -2,9 +2,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import Icon from '../../components/Icon'
 import { ErrorState, PageLoader } from '../../components/LoadState'
 import ShipmentForm from '../../components/shipments/ShipmentForm'
+import { useShipments } from '../../context/ShipmentContext'
 import { useToast } from '../../context/ToastContext'
-import { useAsync } from '../../hooks/useAsync'
-import { createShipment, getTrackingNumbers } from '../../services/shipmentService'
 import { addDays, SHIPMENT_TYPES, todayISO } from '../../utils/shipmentOptions'
 import { generateTrackingNumber } from '../../utils/tracking'
 
@@ -12,10 +11,9 @@ export default function ShipmentCreate() {
   const navigate = useNavigate()
   const toast = useToast()
   // Existing tracking numbers are loaded first so a new one is never a duplicate.
-  const { status, data: existing, error, reload } = useAsync(getTrackingNumbers, [])
+  const { status, error, reload, trackingNumbers: existing, createShipment } = useShipments()
 
-  const regenerateTracking = async (shippingDate) =>
-    generateTrackingNumber(shippingDate, await getTrackingNumbers())
+  const regenerateTracking = async (shippingDate) => generateTrackingNumber(shippingDate, existing)
 
   const handleSubmit = async (values) => {
     const shipment = await createShipment(values)

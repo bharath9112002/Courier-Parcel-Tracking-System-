@@ -4,20 +4,27 @@ import ConfirmDialog from '../../components/ConfirmDialog'
 import Icon from '../../components/Icon'
 import { ErrorState, PageLoader } from '../../components/LoadState'
 import DeliveryProgress from '../../components/shipments/DeliveryProgress'
+import StatusHistory from '../../components/shipments/StatusHistory'
+import StatusUpdateDialog from '../../components/shipments/StatusUpdateDialog'
 import StatusBadge from '../../components/StatusBadge'
+import { useDeliveryStatus } from '../../context/DeliveryStatusContext'
+import { useShipment, useShipments } from '../../context/ShipmentContext'
 import { useToast } from '../../context/ToastContext'
-import { useAsync } from '../../hooks/useAsync'
-import { deleteShipment, getShipment } from '../../services/shipmentService'
+import { useTracking } from '../../context/TrackingContext'
 import { formatDate } from '../../utils/format'
 import { daysBetween, PARCEL_TYPES, parseISODate, SHIPMENT_TYPES, todayISO } from '../../utils/shipmentOptions'
-import { STATUS } from '../../utils/shipmentStatus'
+import { isFinal, STATUS } from '../../utils/shipmentStatus'
 
 const longDate = (iso) =>
   formatDate(parseISODate(iso), { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
 
+const shortStamp = (ms) => formatDate(ms, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
+
 function deliveryNote(s) {
   if (s.status === 'delivered') return { text: 'Delivered', tone: 'success' }
-  if (s.status === 'failed' || s.status === 'returned') return { text: STATUS[s.status].label, tone: 'danger' }
+  if (s.status === 'failed') return { text: 'Re-attempt pending', tone: STATUS.failed.tone }
+  if (s.status === 'returned') return { text: 'Back with sender', tone: STATUS.returned.tone }
+  if (s.status === 'cancelled') return { text: 'Will not be delivered', tone: STATUS.cancelled.tone }
   const days = daysBetween(todayISO(), s.expectedDeliveryDate)
   if (days < 0) return { text: `Overdue by ${-days} day${days === -1 ? '' : 's'}`, tone: 'danger' }
   if (days === 0) return { text: 'Due today', tone: 'warning' }
@@ -28,7 +35,11 @@ export default function ShipmentDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
   const toast = useToast()
-  const { status, data: s, error, reload } = useAsync(() => getShipment(id), [id])
+  const { status, data: s, error, reload } = useShipment(id)
+  const { deleteShipment } = useShipments()
+  const { getTracking } = useTracking()
+  const { getHistory } = useDeliveryStatus()
+  const [updating, setUpdating] = useState(false)
 
   const [confirming, setConfirming] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -46,6 +57,11 @@ export default function ShipmentDetails() {
       setDeleteError(err.message)
       setDeleting(false)
     }
+  }
+
+  const handleStatusSaved = (updated) => {
+    setUpdating(false)
+    toast.success(`${updated.trackingNumber} marked as ${STATUS[updated.status].label.toLowerCase()}`)
   }
 
   const copyTracking = async () => {
@@ -68,6 +84,8 @@ export default function ShipmentDetails() {
   }
 
   const note = deliveryNote(s)
+  const tracking = getTracking(s)
+  const changes = getHistory(s)
 
   return (
     <main className="page page--narrow">
@@ -89,6 +107,10 @@ export default function ShipmentDetails() {
           </div>
         </div>
         <div className="details-head__actions">
+          <button type="button" className="btn btn--outline btn--sm" onClick={() => setUpdating(true)}
+            disabled={isFinal(s.status)} title={isFinal(s.status) ? `${STATUS[s.status].label} is a final status` : undefined}>
+            <Icon name="activity" size={15} /> Update status
+          </button>
           <Link to={`/tracking?ids=${s.trackingNumber}`} className="btn btn--ghost btn--sm">
             <Icon name="pin" size={15} /> Track
           </Link>
@@ -103,7 +125,7 @@ export default function ShipmentDetails() {
 
       <section className="card">
         <h2 className="card__title">Delivery progress</h2>
-        <DeliveryProgress status={s.status} />
+        <DeliveryProgress status={s.status} times={tracking.milestones} formatTime={shortStamp} />
       </section>
 
       <section className="card route">
@@ -144,6 +166,27 @@ export default function ShipmentDetails() {
           </dl>
         </section>
       </div>
+
+      <section className="card">
+        <div className="card__head">
+          <div>
+            <h2>Status history</h2>
+            <p className="muted">
+              {changes.length} status change{changes.length === 1 ? '' : 's'}, newest first
+            </p>
+          </div>
+        </div>
+        <StatusHistory changes={changes} />
+      </section>
+
+      {updating && (
+        <StatusUpdateDialog
+          shipment={s}
+          location={tracking.events[0].location}
+          onSaved={handleStatusSaved}
+          onCancel={() => setUpdating(false)}
+        />
+      )}
 
       {confirming && (
         <ConfirmDialog

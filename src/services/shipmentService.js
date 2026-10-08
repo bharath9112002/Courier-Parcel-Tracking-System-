@@ -13,6 +13,7 @@ import { mulberry32 } from '../data/mockData'
 import { addDays, PARCEL_TYPES, SHIPMENT_TYPES, todayISO } from '../utils/shipmentOptions'
 import { generateTrackingNumber } from '../utils/tracking'
 import { ApiError, request } from './http'
+import { appendStatusLog, removeStatusLog } from './statusLog'
 
 const PEOPLE_API = 'https://dummyjson.com/users'
 const WRITE_API = 'https://jsonplaceholder.typicode.com/posts'
@@ -63,13 +64,17 @@ const formatAddress = ({ address, city, state, postalCode }) =>
   `${address}, ${city}, ${state} ${postalCode}`
 
 function seedStatus(rand, shippingDate, expectedDate, today) {
-  if (shippingDate > today) return 'pending'
-  if (shippingDate === today) return rand() < 0.6 ? 'pending' : 'in_transit'
+  if (shippingDate > today) return rand() < 0.88 ? 'pending' : 'cancelled'
+  if (shippingDate === today) {
+    const r = rand()
+    return r < 0.4 ? 'pending' : r < 0.75 ? 'picked_up' : 'in_transit'
+  }
   if (expectedDate < today) {
     const r = rand()
-    if (r < 0.84) return 'delivered'
-    if (r < 0.9) return 'failed'
-    if (r < 0.95) return 'returned'
+    if (r < 0.8) return 'delivered'
+    if (r < 0.86) return 'failed'
+    if (r < 0.91) return 'returned'
+    if (r < 0.96) return 'cancelled'
     return 'in_transit'
   }
   if (expectedDate === today) return rand() < 0.6 ? 'out_for_delivery' : 'delivered'
@@ -137,16 +142,6 @@ export async function getShipments() {
   return seeding
 }
 
-export async function getShipment(id) {
-  const shipment = (await getShipments()).find((s) => s.id === id)
-  if (!shipment) throw new ApiError('Shipment not found. It may have been deleted.', 404)
-  return shipment
-}
-
-export async function getTrackingNumbers() {
-  return (await getShipments()).map((s) => s.trackingNumber)
-}
-
 export async function createShipment(data) {
   const all = await getShipments()
   if (all.some((s) => s.trackingNumber === data.trackingNumber)) {
@@ -160,7 +155,10 @@ export async function createShipment(data) {
   return shipment
 }
 
-export async function updateShipment(id, data) {
+// `change` describes a status change for the status history: who made it,
+// where the parcel is, and an optional note. It is only logged when the
+// status actually changes.
+export async function updateShipment(id, data, change = {}) {
   const all = await getShipments()
   const existing = all.find((s) => s.id === id)
   if (!existing) throw new ApiError('Shipment not found. It may have been deleted.', 404)
@@ -174,6 +172,9 @@ export async function updateShipment(id, data) {
     updatedAt: new Date().toISOString(),
   }
   saveLocal(all.map((s) => (s.id === id ? shipment : s)))
+  if (shipment.status !== existing.status) {
+    appendStatusLog(id, { ...change, from: existing.status, status: shipment.status, time: Date.parse(shipment.updatedAt) })
+  }
   return shipment
 }
 
@@ -183,4 +184,5 @@ export async function deleteShipment(id) {
 
   await request(`${WRITE_API}/1`, { method: 'DELETE' })
   saveLocal(all.filter((s) => s.id !== id))
+  removeStatusLog(id)
 }

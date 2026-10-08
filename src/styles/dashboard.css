@@ -5,13 +5,17 @@
 .tone--warning, .stat--warning, .badge--warning { --tone: #d97706; }
 .tone--danger, .stat--danger, .badge--danger { --tone: var(--danger); }
 .tone--neutral, .badge--neutral { --tone: var(--muted); }
+.tone--teal, .stat--teal, .badge--teal { --tone: #0f766e; }
+.tone--slate, .stat--slate, .badge--slate { --tone: #64748b; }
 .stat--violet { --tone: #7c3aed; }
-.stat--pink { --tone: #db2777; }
+.tone--pink, .stat--pink, .badge--pink { --tone: #db2777; }
 
 @media (prefers-color-scheme: dark) {
   .tone--warning, .stat--warning, .badge--warning { --tone: #fbbf24; }
+  .tone--teal, .stat--teal, .badge--teal { --tone: #2dd4bf; }
+  .tone--slate, .stat--slate, .badge--slate { --tone: #94a3b8; }
   .stat--violet { --tone: #a78bfa; }
-  .stat--pink { --tone: #f472b6; }
+  .tone--pink, .stat--pink, .badge--pink { --tone: #f472b6; }
 }
 
 .btn--auto {
