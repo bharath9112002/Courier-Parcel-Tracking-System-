@@ -7,12 +7,16 @@
 //   request and echoes the saved record back, but doesn't actually persist it,
 //   so the echoed result is kept in localStorage.
 //
+// Creating a shipment or changing its status also adds a notification
+// (see notificationService).
+//
 // To move to a real backend (e.g. MockAPI), only this file needs to change.
 
 import { mulberry32 } from '../data/mockData'
 import { addDays, PARCEL_TYPES, SHIPMENT_TYPES, todayISO } from '../utils/shipmentOptions'
 import { generateTrackingNumber } from '../utils/tracking'
 import { ApiError, request } from './http'
+import { notifyShipmentCreated, notifyStatusChange } from './notificationService'
 import { appendStatusLog, removeStatusLog } from './statusLog'
 
 const PEOPLE_API = 'https://dummyjson.com/users'
@@ -152,6 +156,7 @@ export async function createShipment(data) {
   const now = new Date().toISOString()
   const shipment = { ...clean(saved), id: crypto.randomUUID(), createdAt: now, updatedAt: now }
   saveLocal([shipment, ...all])
+  notifyShipmentCreated(shipment)
   return shipment
 }
 
@@ -174,6 +179,7 @@ export async function updateShipment(id, data, change = {}) {
   saveLocal(all.map((s) => (s.id === id ? shipment : s)))
   if (shipment.status !== existing.status) {
     appendStatusLog(id, { ...change, from: existing.status, status: shipment.status, time: Date.parse(shipment.updatedAt) })
+    notifyStatusChange(shipment, existing.status, change)
   }
   return shipment
 }

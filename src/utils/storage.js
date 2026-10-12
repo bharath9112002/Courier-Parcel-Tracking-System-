@@ -16,6 +16,7 @@ const APP_KEYS = [
   'courier_customers',
   'courier_tracking_updates',
   'courier_recent_tracking',
+  'courier_notifications',
 ]
 // Accounts and the signed-in session survive a data reset.
 const KEEP_ON_RESET = [USERS_KEY, CURRENT_USER_KEY, VERSION_KEY]

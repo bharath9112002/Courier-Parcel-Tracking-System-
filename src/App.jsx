@@ -13,6 +13,7 @@ import DeliveryStatus from './pages/delivery/DeliveryStatus'
 import ForgotPassword from './pages/ForgotPassword'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
+import Notifications from './pages/notifications/Notifications'
 import Profile from './pages/Profile'
 import Register from './pages/Register'
 import ShipmentCreate from './pages/shipments/ShipmentCreate'
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="/customers/new" element={<CustomerCreate />} />
           <Route path="/customers/:id" element={<CustomerProfile />} />
           <Route path="/customers/:id/edit" element={<CustomerEdit />} />
+          <Route path="/notifications" element={<Notifications />} />
           <Route path="/reports" element={<ComingSoon title="Reports" icon="chart" />} />
           <Route path="/settings" element={<ComingSoon title="Settings" icon="settings" />} />
         </Route>

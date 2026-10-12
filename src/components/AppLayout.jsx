@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useNotifications } from '../context/NotificationContext'
+import { badgeText } from '../utils/notifications'
 import Icon from './Icon'
+import NotificationBell from './notifications/NotificationBell'
 
 const NAV = [
   { to: '/dashboard', icon: 'grid', label: 'Dashboard' },
@@ -9,6 +12,7 @@ const NAV = [
   { to: '/tracking', icon: 'pin', label: 'Track parcel' },
   { to: '/delivery-status', icon: 'activity', label: 'Delivery status' },
   { to: '/customers', icon: 'users', label: 'Customers' },
+  { to: '/notifications', icon: 'bell', label: 'Notifications' },
   { to: '/reports', icon: 'chart', label: 'Reports' },
 ]
 const NAV_BOTTOM = [
@@ -16,17 +20,22 @@ const NAV_BOTTOM = [
   { to: '/settings', icon: 'settings', label: 'Settings' },
 ]
 
-function NavItems({ items, onNavigate }) {
+// `counts` adds an unread pill to a link, keyed by path.
+function NavItems({ items, counts = {}, onNavigate }) {
   return items.map((item) => (
     <NavLink key={item.to} to={item.to} className="nav__link" onClick={onNavigate}>
       <Icon name={item.icon} size={19} />
       {item.label}
+      {counts[item.to] > 0 && (
+        <span className="nav__count" aria-label={`${counts[item.to]} unread`}>{badgeText(counts[item.to])}</span>
+      )}
     </NavLink>
   ))
 }
 
 export default function AppLayout() {
   const { user, logout } = useAuth()
+  const { unreadCount } = useNotifications()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const closeMenu = () => setMenuOpen(false)
@@ -51,7 +60,7 @@ export default function AppLayout() {
 
         <nav className="nav" aria-label="Main">
           <span className="nav__heading">Menu</span>
-          <NavItems items={NAV} onNavigate={closeMenu} />
+          <NavItems items={NAV} counts={{ '/notifications': unreadCount }} onNavigate={closeMenu} />
           <span className="nav__heading">Account</span>
           <NavItems items={NAV_BOTTOM} onNavigate={closeMenu} />
         </nav>
@@ -75,10 +84,7 @@ export default function AppLayout() {
           </label>
 
           <div className="topbar__user">
-            <button type="button" className="icon-btn" aria-label="Notifications">
-              <Icon name="bell" size={19} />
-              <span className="icon-btn__dot" />
-            </button>
+            <NotificationBell />
             <div className="topbar__who">
               <strong>{user.name}</strong>
               <span>{user.email}</span>
