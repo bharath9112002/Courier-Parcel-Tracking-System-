@@ -17,7 +17,6 @@ const NAV = [
 ]
 const NAV_BOTTOM = [
   { to: '/profile', icon: 'user', label: 'Profile' },
-  { to: '/settings', icon: 'settings', label: 'Settings' },
 ]
 
 // `counts` adds an unread pill to a link, keyed by path.

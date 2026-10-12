@@ -3,7 +3,6 @@ import AppLayout from './components/AppLayout'
 import GuestRoute from './components/GuestRoute'
 import ModuleProviders from './context/ModuleProviders'
 import ProtectedRoute from './components/ProtectedRoute'
-import ComingSoon from './pages/ComingSoon'
 import CustomerCreate from './pages/customers/CustomerCreate'
 import CustomerEdit from './pages/customers/CustomerEdit'
 import CustomerList from './pages/customers/CustomerList'
@@ -16,6 +15,7 @@ import NotFound from './pages/NotFound'
 import Notifications from './pages/notifications/Notifications'
 import Profile from './pages/Profile'
 import Register from './pages/Register'
+import Reports from './pages/reports/Reports'
 import ShipmentCreate from './pages/shipments/ShipmentCreate'
 import ShipmentDetails from './pages/shipments/ShipmentDetails'
 import ShipmentEdit from './pages/shipments/ShipmentEdit'
@@ -48,8 +48,7 @@ export default function App() {
           <Route path="/customers/:id" element={<CustomerProfile />} />
           <Route path="/customers/:id/edit" element={<CustomerEdit />} />
           <Route path="/notifications" element={<Notifications />} />
-          <Route path="/reports" element={<ComingSoon title="Reports" icon="chart" />} />
-          <Route path="/settings" element={<ComingSoon title="Settings" icon="settings" />} />
+          <Route path="/reports" element={<Reports />} />
         </Route>
       </Route>
 

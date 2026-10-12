@@ -155,6 +155,7 @@ const PATHS = {
       <path d="m5.6 5.6 12.8 12.8" />
     </>
   ),
+  download: <path d="M12 3v12m-5-5 5 5 5-5M4 21h16" />,
   activity: <path d="M22 12h-4l-3 9L9 3l-3 9H2" />,
 }
 

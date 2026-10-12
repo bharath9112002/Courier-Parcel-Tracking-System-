@@ -12,6 +12,7 @@ import './styles/customers.css'
 import './styles/tracking.css'
 import './styles/delivery-status.css'
 import './styles/notifications.css'
+import './styles/reports.css'
 
 // Before anything reads storage, so the app starts from its own data only.
 cleanStorage()
